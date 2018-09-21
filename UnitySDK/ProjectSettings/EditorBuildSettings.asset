@@ -4,4 +4,11 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Tutorial-Unity3DCollege/Number.unity
+    guid: bb0c5adb3ac58490d909c37c8a0839ff
+  - enabled: 0
+    path: Assets/_Tutorial-CustomEnv/Scenes/RollingBall.unity
+    guid: 54aa3ff2501b448f4a98b00b3e093058
+  m_configObjects: {}
