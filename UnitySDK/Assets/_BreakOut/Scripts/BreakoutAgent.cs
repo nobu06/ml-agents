@@ -8,7 +8,9 @@
  * 
  * TODO:
  * - replace the magic numbers
- * - ...
+ * - 
+ * 
+ * - (fixed) 9/24/18 Mon - reset the position of the paddle when Reset(). It doesn't reset at the moment
  */
 
 using System.Collections;
@@ -18,15 +20,15 @@ using MLAgents;
 
 public class BreakoutAgent : Agent
 {
-    [SerializeField]
-    private Transform agentPaddle;
+    //[SerializeField]
+    //private Transform agentPaddle;
 
     [SerializeField]
     private Transform ball;
 
     public Transform ballPos;
 
-    public Transform paddlePos;
+    //public Transform paddlePos;
 
     public Rigidbody rbBall;
 
@@ -35,6 +37,8 @@ public class BreakoutAgent : Agent
 
     [SerializeField]
     private float paddleXPos;
+
+    private float rewardXDistance = 0.4f;        // x distance b/w the paddle and the ball. If distance is smaller than this, agent receives a reward
 
 
 //    public Transform paddleStartPos;
@@ -56,14 +60,14 @@ public class BreakoutAgent : Agent
 	public override void CollectObservations()
     {
 
-        //AddVectorObs(ballPos.position - paddlePos.position);        // the y distance from the ball to the agent
+        AddVectorObs(ballPos.position - gameObject.transform.position);        // the y distance from the ball to the agent
 
         AddVectorObs(ballPos.position.x);
         AddVectorObs(ballPos.position.y);
 
-        AddVectorObs(paddlePos.position.x);
+        AddVectorObs(gameObject.transform.position.x);
 
-        //        AddVectorObs(rbBall.velocity);      // need?
+        AddVectorObs(rbBall.velocity);      // need?
 
         // whether the ball has touched the deadZone?
         // the num of blocks destroyed?
@@ -71,12 +75,14 @@ public class BreakoutAgent : Agent
 
     public override void AgentReset()
     {
-        paddlePos.transform.position = new Vector3(0, 1.8f, 0); // paddleStartPos.position;
-
-        rbBall.GetComponent<BallMovement>().ResetToInitialVelocity();
+        
+        rbBall.GetComponent<BallMovement>().ResetToInitialVelocity();       // reset to the velocity specified in the inspector
 
         //rbBall.angularVelocity = Vector3.zero;
         //rbBall.velocity = Vector3.zero;
+        gameObject.transform.position = new Vector3(0f, 1.8f, 0f);             
+
+        paddleXPos = 0f;    // reset the x pos
 
         // place the ball slightly above the player
         ball.transform.position = new Vector3(Random.Range(-1.5f, 1.5f), 2.68f, 0) + gameObject.transform.position;
@@ -99,26 +105,32 @@ public class BreakoutAgent : Agent
                 break;
         }
 
-        paddlePos.position = new Vector3(paddleXPos, 1.8f, 0);
+        gameObject.transform.position = new Vector3(paddleXPos, 1.8f, 0);
 
-        if ((ball.transform.position.y - paddlePos.transform.position.y) < -0.1f)
+        if ((ball.transform.position.y - gameObject.transform.position.y) < -0.1f)
         {
-            SetReward(-1.0f);
+            AddReward(-0.5f);
             Done();
         }
 
-        float difference = Mathf.Abs(paddleXPos - ballXPos);
+        float difference = Mathf.Abs(gameObject.transform.position.x - ball.position.x);
 
-        //Debug.Log(string.Format("dif: {0}, R:{1}, CR: {2}", difference, GetReward(), GetCumulativeReward()));
+        // if the paddle is less than this distance away at any time. Encourages the paddle to be close to the ball at all times
+        if (difference < rewardXDistance)  
+        {
+            AddReward(0.05f);
+        }
 
-
-        if (paddlePos.position.y < 2.0)
+        // magic num - the height of the ball when it's close to the paddle. Reward if the paddle bounces the ball back up
+        if (ball.position.y < 2.5f)     
         {
             if (difference < 0.5f)
             {
-                AddReward(0.1f);
+                AddReward(0.5f);
             }
         }
+
+        Debug.Log(string.Format("R:{0}, CR: {1}", GetReward(), GetCumulativeReward()));
     }
 
 
